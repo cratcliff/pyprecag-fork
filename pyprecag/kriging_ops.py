@@ -533,3 +533,51 @@ def run_vesper(ctrl_file, bMinimiseWindow=True, vesper_exe=vesper_exe):
                                startupinfo=info)
     process.wait()
     LOGGER.info('{:<30}\t{dur:<15}'.format('Vesper Kriging', dur=str(timedelta(seconds=time.time() - task_time))))
+
+def parse_variogram_file(variogram_file, minpts=0, maxpts=0, ptkrg='Punctual',
+                         lockrg='Global', comvar='Define Variogram Parameter'):
+    """Parse the Vesper variogram file and return a dictionary of the values."""
+
+    valid_keys = VesperControl().keys()
+    
+    vario_values = {'minpts': minpts, 'maxpts': maxpts,
+                    'jpntkrg': ptkrg, 'jlockrg': lockrg,
+                    'jcomvar': comvar
+                    }
+
+    for line in open(variogram_file):
+
+        line = line.strip()
+        if line == '': continue
+        
+        for ea in ['=', ':', ' ']:
+            if ea in line:
+                key, val = line.split(ea, 1)
+                break
+        
+        if isinstance(key, (int, float)):continue
+        if key.strip().lower() == 'type of weighting':
+            key = 'iwei'
+        elif key.strip().lower() == 'variogram model':
+            key = 'modtyp'
+        elif key.strip().lower() == 'c0':
+            key='CO'
+            
+        if key not in valid_keys: continue
+
+        # sort out the numerics from the strings
+        try:
+            key = int(float(key)) if int(
+                float(key)) == float(key) else float(key)
+        except ValueError:
+            key = key.strip()
+
+        try:
+            val = int(float(val)) if int(float(val)) == float(val) else float(val)
+        except ValueError:
+            val = val.strip()
+
+        vario_values[key] = val
+        
+                
+    return vario_values
