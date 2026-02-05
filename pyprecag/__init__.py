@@ -9,7 +9,7 @@ import os
 import sys
 import subprocess
 import tempfile
-
+import pyproj
 import six
 
 from . import config
@@ -24,6 +24,9 @@ TEMPDIR = os.path.join(tempfile.gettempdir(), 'PrecisionAg')
 
 if not os.path.exists(TEMPDIR):
     os.mkdir(TEMPDIR)
+
+# Enable global context for thread-safe PROJ database access
+pyproj.set_use_global_context(True)
 
 LOGGER = logging.getLogger('pyprecag')
 LOGGER.addHandler(logging.NullHandler())
