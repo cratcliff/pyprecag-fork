@@ -979,12 +979,7 @@ def extract_pixel_statistics_for_points(points_geodataframe, points_crs, rasterf
         dur=str(timedelta(seconds=time.time() - start_time))
     ))
 
-
-    if points_crs :
-        points_crs = pyprecag_crs.crs()
-        points_crs.getFromEPSG(points_geodataframe.crs.to_epsg())
-
-    return points_geodataframe, points_crs
+    return points_geodataframe
 
 
 def multi_block_bands_processing(image_file, pixel_size, out_folder, band_nums=[], image_epsg=0,
@@ -2083,7 +2078,7 @@ def create_points_along_line(lines_geodataframe, lines_crs, distance_between_poi
     return segs_gdf, points_crs, striplines_gdf
 
 
-def ttest_analysis(points_geodataframe, points_crs, values_raster, out_folder,
+def ttest_analysis(points_geodataframe, values_raster, out_folder,
                    zone_raster='', control_raster='', size=5, create_graph=False):
     """Run a moving window t-test analysis for a strip trial as described in Lawes
     and Bramley (2012).
@@ -2130,9 +2125,6 @@ def ttest_analysis(points_geodataframe, points_crs, values_raster, out_folder,
 
     if not any("POINT" in g.upper() for g in points_geodataframe.geom_type.unique()):
         raise GeometryError('Invalid input data : a points geopandas dataframe is required')
-
-    if not isinstance(points_crs, pyprecag_crs.crs):
-        raise TypeError('Crs must be an instance of pyprecag.crs.crs')
 
     if out_folder is None or out_folder == '':
         raise ValueError('Please specify an output folder')
@@ -2209,9 +2201,7 @@ def ttest_analysis(points_geodataframe, points_crs, values_raster, out_folder,
     line_count = len(points_geodataframe['TrialID'].unique())
 
     # Extract raster values for points ------------------------------------------------------------
-    gdf_points, points_crs = extract_pixel_statistics_for_points(points_geodataframe, points_crs,
-                                                                 raster_files, 'extract_pixels.csv',
-                                                                 size_list=[1])
+    gdf_points = extract_pixel_statistics_for_points(points_geodataframe, raster_files, 'extract_pixels.csv', size_list=[1])
     gdf_points.index.name = 'FID'
     column_names = {}
 

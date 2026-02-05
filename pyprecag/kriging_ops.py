@@ -230,7 +230,7 @@ def vesper_text_to_raster(control_textfile, krig_epsg=0, nodata_value=-9999):
                  "\t95% Confidence Interval : {:.5f}".format(median_val, 2 * 1.96 * median_val))
 
     x_field, y_field = predictCoordinateColumnNames(df_krige.columns.tolist())
-    gdf_krig, _ = add_point_geometry_to_dataframe(df_krige, [x_field, y_field], krig_epsg)
+    gdf_krig = add_point_geometry_to_dataframe(df_krige, [x_field, y_field], krig_epsg)
 
     cellsize_x = float(df_krige[x_field].sort_values().drop_duplicates().diff(1).mode())
     cellsize_y = float(df_krige[y_field].sort_values().drop_duplicates().diff(1).mode())
@@ -253,7 +253,7 @@ def vesper_text_to_raster(control_textfile, krig_epsg=0, nodata_value=-9999):
     # 3 methods trialed.
     with rasterio.open(os.path.normpath(out_pred_tif), 'w', driver='GTiff',
                        width=x_cols, height=y_rows, count=1,
-                       crs=rasterio.crs.CRS.from_epsg(krig_epsg),
+                       crs=krig_epsg,
                        dtype='float32', nodata=-9999, transform=transform) as out_pred:
 
         # uses points to burn values into the corresponding raster pixel.
@@ -267,7 +267,7 @@ def vesper_text_to_raster(control_textfile, krig_epsg=0, nodata_value=-9999):
 
     with rasterio.open(os.path.normpath(out_se_tif), 'w', driver='GTiff', width=x_cols,
                        height=y_rows, count=1,
-                       crs=rasterio.crs.CRS.from_epsg(krig_epsg), dtype='float32', nodata=-9999,
+                       crs=krig_epsg, dtype='float32', nodata=-9999,
                        transform=transform) as out_se:
 
         # uses points to burn values into the corresponding raster pixel.

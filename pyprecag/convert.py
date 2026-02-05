@@ -346,14 +346,14 @@ def add_point_geometry_to_dataframe(in_dataframe, coord_columns=None,
     #gdf_crs = pyprecag_crs.crs()
     #gdf_crs.getFromEPSG(coord_columns_epsg)
 
-    if out_epsg == -1:
-        xmin, ymin, _, _ = gdf_csv.total_bounds
-        out_epsg = pyprecag_crs.getProjectedCRSForXY(xmin, ymin, coord_columns_epsg).epsg_number
+    # if out_epsg == -1:
+    #     xmin, ymin, _, _ = gdf_csv.total_bounds
+    #     out_epsg = pyprecag_crs.getProjectedCRSForXY(xmin, ymin, coord_columns_epsg).epsg_number
 
     if out_epsg > 0:
         gdf_csv = gdf_csv.to_crs(epsg=out_epsg)
 
-    return gdf_csv, gdf_csv.crs.to_epsg()
+    return gdf_csv #, gdf_csv.crs.to_epsg()
 
 
 def convert_csv_to_points(in_csvfilename, out_shapefilename=None, coord_columns=None,
@@ -392,8 +392,7 @@ def convert_csv_to_points(in_csvfilename, out_shapefilename=None, coord_columns=
 
     desc_csv = CsvDescribe(in_csvfilename)
     pdf_csv = desc_csv.open_pandas_dataframe()
-
-    gdf_csv, gdf_crs = add_point_geometry_to_dataframe(pdf_csv, coord_columns,
+    gdf_csv = add_point_geometry_to_dataframe(pdf_csv, coord_columns,
                                                        coord_columns_epsg, out_epsg)
 
     if config.get_debug_mode() or out_shapefilename is not None:
