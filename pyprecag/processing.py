@@ -917,41 +917,28 @@ def extract_pixel_statistics_for_points(points_geodataframe, points_crs, rasterf
                     dest.write(arr, i)
                     dest.update_tags(i, name=nm)
 
-            ''' https://gis.stackexchange.com/a/190428
-             Get a generator object of  XY, value pairs to extract which can be used later by
-              rasterio.sample() to extract values from ALL bands .... '''
+            '''https://geopandas.org/en/stable/gallery/geopandas_rasterio_sample.html '''
             pt_shapes = ((geom.x, geom.y) for geom in points_geodataframe.geometry)
 
             # open the file for reading
             with memfile.open() as dest:
                 # using rasterio sample, extract values from each band at each point
-                raster_vals = [list(val) for val in dest.sample(pt_shapes)]
+                w=len(str(src.count + 1))
+                col_names = [dest.tags(i_band).get('name', f'Band_{i_band:0{w}d}') for i_band in range(1, dest.count + 1)]
+                points_geodataframe[col_names] = [x for x in dest.sample(pt_shapes)]
 
                 # extract the statistic type from the band tag name element
-                col_names = [dest.tags(i_band)['name'] for i_band in range(1, dest.count + 1)]
+                #col_names = [dest.tags(i_band)['name'] for i_band in range(1, dest.count + 1)]
 
             del pt_shapes
 
-        # Convert raster_vals numpy array to dataframe using tags as column names
-        df_raster_vals = pd.DataFrame(raster_vals, columns=col_names)
-
-        # replace values for points outside the raster extent with np.nan values
-        df_raster_vals.replace(meta['nodata'], np.nan, inplace=True)
-
-        del raster_vals
-
-        # Add the point geometry back in by joining by row index
-        # If Rounding's required do this.
-        # points_geodataframe = pd.concat([points_geodataframe, df_raster_vals.round(6)], axis=1)
-        points_geodataframe = pd.concat([points_geodataframe, df_raster_vals], axis=1)
-        del df_raster_vals
 
     # Reproject points back to original coordinate system if required.
     if original_crs != points_geodataframe.crs:
         points_geodataframe.to_crs(original_crs, inplace=True)
 
-    # Make sure the output CSV contains coordinates
-    if None in predictCoordinateColumnNames(points_geodataframe.columns.tolist()):
+    # Make sure the output CSV contains coordinates  df
+    if None in predictCoordinateColumnNames(points_geodataframe.select_dtypes('number').columns.tolist()):
         # probably from a shapefile so add coords. 
         if points_geodataframe.crs.is_geographic:
             points_geodataframe['Longitude'] = points_geodataframe.geometry.apply(lambda p: p.x)
@@ -2204,6 +2191,7 @@ def ttest_analysis(points_geodataframe, values_raster, out_folder,
     gdf_points = extract_pixel_statistics_for_points(points_geodataframe, raster_files, 'extract_pixels.csv', size_list=[1])
     gdf_points.index.name = 'FID'
     column_names = {}
+    # c = list(gdf_points.columns.difference(points_geodataframe.columns))
 
     # find the columns relating to the rasters
     if values_raster != '':
@@ -2378,7 +2366,9 @@ def ttest_analysis(points_geodataframe, values_raster, out_folder,
 
             # add plotting parameters to table -----------------------------------------------
             # assign an id to the column
-            df_statstable['zone_UID'] = df_statstable.groupby(zone_column).ngroup()
+            df_statstable['zone_UID'] = df_statstable.groupby(zone_column).ngroup() +1
+            df_statstable['zone_UID'] = df_statstable['zone_UID'].fillna(0)
+            df_statstable['zone_UID'] = df_statstable['zone_UID'].astype(pd.Int64Dtype())
 
             # assign a marker based on the index from the list
             df_statstable["zone_marker"] = df_statstable['zone_UID'].apply(lambda x: markers[x])
